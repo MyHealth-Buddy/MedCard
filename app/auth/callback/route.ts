@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   
   // This is where YOU decide where they go after a successful login.
   // Right now, it defaults to "/" (your home page). 
-  const next = searchParams.get('next') ?? '/'
+  const next = searchParams.get('next') ?? '/dashboard'
 
   if (code) {
     const cookieStore = await cookies()
@@ -35,7 +35,10 @@ export async function GET(request: Request) {
     )
 
     // Exchange the secure code for a logged-in session
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    const { data, error } =  await supabase.auth.exchangeCodeForSession(code)
+
+    console.log("SESSION DATA:", data)
+    console.log("AUTH ERROR:", error)
     
     if (!error) {
       // Success! Send them to the target page.
