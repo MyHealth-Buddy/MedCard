@@ -10,6 +10,7 @@ export default function Home() {
 
   const [session, setSession] = useState<any | null>(null)
   const [user, setUser] = useState<any | null>(null)
+  const [copied, setCopied] = useState(false)
   const [sharedUid, setSharedUid] = useState<string | null>(null)
 
   useEffect(() => {
@@ -85,28 +86,58 @@ export default function Home() {
           Go to Login Page
         </Link>
       ) : (
-        <div className="bg-zinc-800 p-6 rounded-md text-center">
-          <p className="mb-2">You're signed in as <strong>{user?.email ?? 'Unknown'}</strong></p>
-          <p className="mb-4">Extra info: welcome back — you can now access MedCard features.</p>
-          
-            {/* QR code for sharing (points to https://med-card-one.vercel.app/?uid=USER_UID) */}
-            <div className="flex justify-center mt-4">
-              {user?.id && <UserQRCode uid={user.id} />}
-            </div>
-          <div className="flex justify-center gap-4">
-            <button
-              onClick={handleSignOut}
-              className="rounded-md bg-red-600 px-6 py-3 font-semibold hover:bg-red-500 transition-colors"
-            >
-              Sign out
-            </button>
-            <Link
-              href="/"
-              className="rounded-md bg-green-600 px-6 py-3 font-semibold hover:bg-green-500 transition-colors"
-            >
-              Stay on this page
-            </Link>
+        <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center space-y-6">
+
+          {/* Header & Value Prop */}
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-50">Your Emergency Digital Medical ID</h1>
+            <p className="text-sm text-slate-300 px-2">
+              Scan this QR code to instantly view critical medical details in an emergency.
+            </p>
           </div>
+
+          {/* QR Code Container */}
+          <div className="flex flex-col items-center justify-center bg-white p-4 rounded-xl max-w-[220px] mx-auto shadow-md">
+            {user?.id && <UserQRCode uid={user.id} size={176} />}
+          </div>
+
+          <button
+            onClick={async () => {
+              try {
+                const shareUrl = `https://med-card-one.vercel.app/?uid=${encodeURIComponent(user?.id ?? '')}`
+                await navigator.clipboard.writeText(shareUrl)
+                setCopied(true)
+                setTimeout(() => setCopied(false), 1800)
+              } catch (err) {
+                console.error('Failed to copy share link', err)
+              }
+            }}
+            className="text-xs text-sky-400 hover:underline font-medium"
+          >
+            {copied ? 'Copied!' : 'Copy public share link'}
+          </button>
+
+          <hr className="border-slate-800" />
+
+          {/* Instructions Section */}
+          <div className="text-left space-y-3">
+            <h3 className="text-sm font-semibold text-slate-200 uppercase tracking-wider">How to use:</h3>
+            <ul className="space-y-2 text-sm text-slate-400">
+              <li className="flex items-start gap-2">
+                <span className="text-emerald-400 font-bold">•</span>
+                <span><strong>Print & Attach:</strong> Keep it on your phone cover, school bag, or motorcycle keychain.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-emerald-400 font-bold">•</span>
+                <span><strong>Instant Scan:</strong> Anyone can scan it to view your medical profile during a crisis.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-emerald-400 font-bold">•</span>
+                <span><strong>Faster Treatment:</strong> Helps bystanders and doctors give you accurate care quickly.</span>
+              </li>
+            </ul>
+          </div>
+
         </div>
       )}
     </div>
