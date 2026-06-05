@@ -6,8 +6,9 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
   
-  // After a successful login we will always send the user to /qr
-  const next = '/qr'
+  // This is where YOU decide where they go after a successful login.
+  // Right now, it defaults to "/" (your home page). 
+  const next = searchParams.get('next') ?? '/dashboard'
 
   if (code) {
     const cookieStore = await cookies()
