@@ -55,30 +55,19 @@ export default function Home() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-950 text-white">
-      <h1 className="text-4xl font-bold mb-8">Welcome to MedCard</h1>
+      {/* Hero / Purpose Banner */}
+      <div className="w-full max-w-3xl mx-auto text-center px-4 py-8">
+        <h1 className="text-3xl sm:text-4xl font-semibold text-white leading-tight">
+          Fill out and save your vital medical information
+        </h1>
+        <p className="mt-3 text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto">
+          Anyone who scans the QR code will instantly jump directly to this view to access your medical
+          information during a&nbsp;
+          <span className="font-bold text-amber-400">critical emergency or medical condition</span>.
+        </p>
+      </div>
 
-      {sharedUid ? (
-        <div className="bg-zinc-800 p-6 rounded-md text-center">
-          <p className="mb-2">Viewing shared MedCard for <strong>{sharedUid}</strong></p>
-          <p className="mb-4">This is a public view — no login required.</p>
-          <div className="flex justify-center gap-4">
-            <Link
-              href="/login"
-              className="rounded-md bg-blue-600 px-6 py-3 font-semibold hover:bg-blue-500 transition-colors"
-            >
-              Sign in to manage
-            </Link>
-            <a
-              href={`https://med-card-one.vercel.app/?uid=${encodeURIComponent(sharedUid)}`}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-md bg-green-600 px-6 py-3 font-semibold hover:bg-green-500 transition-colors"
-            >
-              Open share link
-            </a>
-          </div>
-        </div>
-      ) : !session ? (
+      {!session ? (
         <Link
           href="/login"
           className="rounded-md bg-blue-600 px-6 py-3 font-semibold hover:bg-blue-500 transition-colors"
