@@ -138,6 +138,21 @@ export default function Home() {
             </ul>
           </div>
 
+          {/* New Option A Profile Management Section */}
+          <div className="pt-5 border-t border-slate-800 text-center space-y-3">
+            <p className="text-xs text-slate-400 px-4 leading-relaxed">
+              Set up your emergency contact numbers, medical history, and allergies so doctors can help you faster.
+            </p>
+            <a
+              href={`https://med-card-one.vercel.app/?uid=${encodeURIComponent(user?.id ?? '')}`}
+              target="_blank"
+              rel="noreferrer"
+              className="w-full inline-block bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium py-2.5 px-4 rounded-xl transition-colors duration-200 shadow-sm"
+            >
+              Create or Edit Your Profile
+            </a>
+          </div>
+
         </div>
       )}
     </div>
