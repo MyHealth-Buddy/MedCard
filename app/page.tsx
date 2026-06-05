@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import UserQRCode from './components/UserQRCode'
 
@@ -12,12 +11,14 @@ export default function Home() {
   const [session, setSession] = useState<any | null>(null)
   const [user, setUser] = useState<any | null>(null)
   const [sharedUid, setSharedUid] = useState<string | null>(null)
-  const searchParams = useSearchParams()
 
   useEffect(() => {
     // check for a shared uid in the URL (e.g. ?uid=USER_UID)
-    const uidFromQuery = searchParams?.get?.('uid') ?? null
-    if (uidFromQuery) setSharedUid(uidFromQuery)
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const uidFromQuery = params.get('uid')
+      if (uidFromQuery) setSharedUid(uidFromQuery)
+    }
 
     let mounted = true
 
