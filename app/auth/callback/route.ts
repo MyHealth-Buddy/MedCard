@@ -7,8 +7,8 @@ export async function GET(request: Request) {
   const code = searchParams.get('code')
   
   // This is where YOU decide where they go after a successful login.
-  // Right now, it defaults to "/" (your home page). 
-  const next = searchParams.get('next') ?? '/dashboard'
+  // Right now, it defaults to "/" (your QR home page). 
+  const next = searchParams.get('next') ?? '/'
 
   if (code) {
     const cookieStore = await cookies()
