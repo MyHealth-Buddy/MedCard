@@ -1,13 +1,37 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 export default function Dashboard() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const [viewingUid, setViewingUid] = useState<string | null>(null)
+
+  useEffect(() => {
+    const uid = searchParams.get('uid')
+    if (uid) {
+      setViewingUid(uid)
+    }
+  }, [searchParams])
 
   return (
     <main className="min-h-screen bg-zinc-950 text-white">
       <div className="mx-auto max-w-7xl p-8">
+
+        {viewingUid && (
+          <div className="mb-6 bg-amber-950 border border-amber-800 rounded-lg p-4">
+            <p className="text-amber-200">
+              <strong>Viewing Profile:</strong> Medical information for UID {viewingUid}
+            </p>
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="mt-2 text-sm text-amber-400 hover:text-amber-300 underline"
+            >
+              Back to My Profile
+            </button>
+          </div>
+        )}
 
         {/* Header */}
         <div className="mb-10 flex items-center justify-between">

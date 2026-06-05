@@ -43,6 +43,7 @@ export default function ProfilePage() {
     }
 
     alert('Profile saved successfully!')
+    router.push('/dashboard')
   }
 
   return (

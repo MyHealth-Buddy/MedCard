@@ -2,11 +2,13 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import UserQRCode from './components/UserQRCode'
 
 export default function Home() {
   const supabase = createClient()
+  const router = useRouter()
 
   const [session, setSession] = useState<any | null>(null)
   const [user, setUser] = useState<any | null>(null)
@@ -18,7 +20,12 @@ export default function Home() {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search)
       const uidFromQuery = params.get('uid')
-      if (uidFromQuery) setSharedUid(uidFromQuery)
+      if (uidFromQuery) {
+        setSharedUid(uidFromQuery)
+        // Redirect to dashboard with the scanned uid
+        router.push(`/dashboard?uid=${encodeURIComponent(uidFromQuery)}`)
+        return
+      }
     }
 
     let mounted = true
@@ -45,7 +52,7 @@ export default function Home() {
         subscription?.unsubscribe()
       } catch {}
     }
-  }, [supabase])
+  }, [supabase, router])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -132,14 +139,12 @@ export default function Home() {
             <p className="text-xs text-slate-400 px-4 leading-relaxed">
               Set up your emergency contact numbers, medical history, and allergies so doctors can help you faster.
             </p>
-            <a
-              href={`https://med-card-one.vercel.app/?uid=${encodeURIComponent(user?.id ?? '')}`}
-              target="_blank"
-              rel="noreferrer"
-              className="w-full inline-block bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium py-2.5 px-4 rounded-xl transition-colors duration-200 shadow-sm"
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium py-2.5 px-4 rounded-xl transition-colors duration-200 shadow-sm"
             >
               Create or Edit Your Profile
-            </a>
+            </button>
           </div>
 
         </div>
