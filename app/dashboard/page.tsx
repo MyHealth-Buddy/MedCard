@@ -1,19 +1,23 @@
 'use client'
 
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 export default function Dashboard() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [viewingUid, setViewingUid] = useState<string | null>(null)
 
   useEffect(() => {
-    const uid = searchParams.get('uid')
-    if (uid) {
-      setViewingUid(uid)
+    // useSearchParams can cause prerender issues during the build.
+    // Read the UID from window.location.search in a client effect instead.
+    try {
+      const params = new URLSearchParams(window.location.search)
+      const uid = params.get('uid')
+      if (uid) setViewingUid(uid)
+    } catch (e) {
+      // ignore during server-side phases
     }
-  }, [searchParams])
+  }, [])
 
   return (
     <main className="min-h-screen bg-zinc-950 text-white">
