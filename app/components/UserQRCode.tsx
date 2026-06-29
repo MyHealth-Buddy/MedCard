@@ -13,7 +13,11 @@ export default function UserQRCode({ uid, size = 200 }: Props) {
 
   useEffect(() => {
     let mounted = true
-    const shareUrl = `https://med-card-one.vercel.app/?uid=${encodeURIComponent(uid)}`
+    const origin =
+      typeof window !== 'undefined'
+        ? window.location.origin
+        : 'https://med-card-one.vercel.app'
+    const shareUrl = `${origin}/view?uid=${encodeURIComponent(uid)}`
 
     toDataURL(shareUrl, { margin: 1, width: size })
       .then((url) => {
@@ -28,19 +32,11 @@ export default function UserQRCode({ uid, size = 200 }: Props) {
     }
   }, [uid, size])
 
-  if (!dataUrl) return <div className="text-sm">Generating QR code…</div>
+  if (!dataUrl) return <div className="text-sm text-zinc-400">Generating QR code…</div>
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <img src={dataUrl} alt="Share QR code" width={size} height={size} />
-      <a
-        href={`https://med-card-one.vercel.app/?uid=${encodeURIComponent(uid)}`}
-        target="_blank"
-        rel="noreferrer"
-        className="text-xs underline"
-      >
-        Open share link
-      </a>
+      <img src={dataUrl} alt="Emergency medical QR code" width={size} height={size} />
     </div>
   )
 }

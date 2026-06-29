@@ -2,170 +2,182 @@
 
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { createClient } from '@/utils/supabase/client'
 
 export default function Dashboard() {
   const router = useRouter()
-  const [viewingUid, setViewingUid] = useState<string | null>(null)
+  const supabase = createClient()
+
+  const [loading, setLoading] = useState(true)
+  const [docCount, setDocCount] = useState<number | null>(null)
+  const [contactCount, setContactCount] = useState<number | null>(null)
+  const [profileName, setProfileName] = useState<string | null>(null)
+  const [profileComplete, setProfileComplete] = useState({ profile: false, medical: false })
 
   useEffect(() => {
-    // useSearchParams can cause prerender issues during the build.
-    // Read the UID from window.location.search in a client effect instead.
-    try {
-      const params = new URLSearchParams(window.location.search)
-      const uid = params.get('uid')
-      if (uid) setViewingUid(uid)
-    } catch (e) {
-      // ignore during server-side phases
+    // If someone lands here with ?uid= (old QR code links), redirect to the public view
+    const params = new URLSearchParams(window.location.search)
+    const uid = params.get('uid')
+    if (uid) {
+      router.replace(`/view?uid=${encodeURIComponent(uid)}`)
+      return
     }
+
+    async function loadStats() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (!user) {
+        router.push('/login')
+        return
+      }
+
+      // Run all queries in parallel
+      const [profileRes, medicalRes, contactsRes, docsRes] = await Promise.all([
+        supabase.from('user_profiles').select('full_name').eq('user_id', user.id).maybeSingle(),
+        supabase.from('medical_information').select('id').eq('user_id', user.id).maybeSingle(),
+        supabase.from('emergency_contacts').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+        supabase.from('medical_documents').select('id', { count: 'exact', head: true }).eq('user_id', user.id),
+      ])
+
+      setProfileName(profileRes.data?.full_name ?? null)
+      setProfileComplete({
+        profile: !!profileRes.data,
+        medical: !!medicalRes.data,
+      })
+      setContactCount(contactsRes.count ?? 0)
+      setDocCount(docsRes.count ?? 0)
+      setLoading(false)
+    }
+
+    loadStats()
   }, [])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+        <p className="text-white text-lg animate-pulse">Loading dashboard…</p>
+      </div>
+    )
+  }
 
   return (
     <main className="min-h-screen bg-zinc-950 text-white">
-      <div className="mx-auto max-w-7xl p-8">
-
-        {viewingUid && (
-          <div className="mb-6 bg-amber-950 border border-amber-800 rounded-lg p-4">
-            <p className="text-amber-200">
-              <strong>Viewing Profile:</strong> Medical information for UID {viewingUid}
-            </p>
-            <button
-              onClick={() => router.push('/dashboard')}
-              className="mt-2 text-sm text-amber-400 hover:text-amber-300 underline"
-            >
-              Back to My Profile
-            </button>
-          </div>
-        )}
+      <div className="mx-auto max-w-4xl p-8">
 
         {/* Header */}
-        <div className="mb-10 flex items-center justify-between">
+        <div className="mb-8 flex items-start justify-between gap-4">
           <div>
             <h1 className="text-4xl font-bold">
-              MedCard Dashboard
+              {profileName ? `Hi, ${profileName.split(' ')[0]}` : 'MedCard Dashboard'}
             </h1>
-
-            <p className="mt-2 text-zinc-400">
-              Manage your emergency medical information
-            </p>
+            <p className="mt-2 text-zinc-400">Manage your emergency medical information</p>
           </div>
 
           <button
-            onClick={() => alert('QR Generator Coming Soon')}
-            className="rounded-lg bg-red-600 px-5 py-3 font-medium hover:bg-red-700"
+            onClick={() => router.push('/')}
+            className="shrink-0 rounded-lg bg-emerald-700 hover:bg-emerald-600 px-5 py-3 font-medium transition-colors text-sm"
           >
-            Generate QR
+            View QR Code
           </button>
         </div>
 
-        {/* Quick Stats */}
-        <div className="mb-10 grid gap-6 md:grid-cols-3">
+        {/* Profile completeness warnings */}
+        {(!profileComplete.profile || !profileComplete.medical || (contactCount ?? 0) === 0) && (
+          <div className="mb-8 rounded-xl bg-amber-950 border border-amber-700 p-4 space-y-1">
+            <p className="text-amber-300 font-semibold text-sm">⚠ Your emergency card is incomplete:</p>
+            {!profileComplete.profile && (
+              <p className="text-amber-200 text-sm">• Personal info (name, blood group) not filled yet</p>
+            )}
+            {!profileComplete.medical && (
+              <p className="text-amber-200 text-sm">• Medical info (allergies, medications) not filled yet</p>
+            )}
+            {(contactCount ?? 0) === 0 && (
+              <p className="text-amber-200 text-sm">• No emergency contacts added yet</p>
+            )}
+          </div>
+        )}
 
-          {/* <div className="rounded-xl bg-zinc-900 p-6">
-            <h3 className="text-zinc-400">
-              Profile Status
-            </h3>
-
-            <p className="mt-2 text-3xl font-bold">
-              100%
-            </p>
-          </div> */}
-
-          <div className="rounded-xl bg-zinc-900 p-6">
-            <h3 className="text-zinc-400">
-              Documents Uploaded
-            </h3>
-
-            <p className="mt-2 text-3xl font-bold">
-              --
-            </p>
+        {/* Stats */}
+        <div className="mb-8 grid gap-4 sm:grid-cols-2">
+          <div className="rounded-xl bg-zinc-900 border border-zinc-800 p-6">
+            <h3 className="text-zinc-400 text-sm">Documents Uploaded</h3>
+            <p className="mt-2 text-4xl font-bold">{docCount ?? '—'}</p>
           </div>
 
-          <div className="rounded-xl bg-zinc-900 p-6">
-            <h3 className="text-zinc-400">
-              Emergency Contacts
-            </h3>
-
-            <p className="mt-2 text-3xl font-bold">
-              --
-            </p>
+          <div className="rounded-xl bg-zinc-900 border border-zinc-800 p-6">
+            <h3 className="text-zinc-400 text-sm">Emergency Contacts</h3>
+            <p className="mt-2 text-4xl font-bold">{contactCount ?? '—'}</p>
           </div>
-
         </div>
 
         {/* Main Sections */}
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-5 sm:grid-cols-2">
 
-          {/* Personal Information */}
-          <div className="rounded-xl bg-zinc-900 p-6">
-            <h2 className="text-2xl font-semibold">
-              Personal Information
-            </h2>
-
-            <p className="mt-3 text-zinc-400">
-              Name, blood group, phone number,
-              address and date of birth.
+          <div className="rounded-xl bg-zinc-900 border border-zinc-800 p-6 flex flex-col">
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="text-xl font-semibold">Personal Information</h2>
+              {profileComplete.profile && <span className="text-xs text-emerald-400 font-medium">✓ Filled</span>}
+            </div>
+            <p className="text-zinc-400 text-sm mt-1 flex-1">
+              Name, blood group, phone number, address and date of birth.
             </p>
-
             <button
               onClick={() => router.push('/profile')}
-              className="mt-5 rounded-lg bg-blue-600 px-4 py-2 hover:bg-blue-700"
+              className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500 transition-colors"
             >
-              Edit
+              {profileComplete.profile ? 'Edit' : 'Fill Now →'}
             </button>
           </div>
 
-          {/* Medical Information */}
-          <div className="rounded-xl bg-zinc-900 p-6">
-            <h2 className="text-2xl font-semibold">
-              Medical Information
-            </h2>
-
-            <p className="mt-3 text-zinc-400">
-              Allergies, medications,
-              conditions and insurance details.
+          <div className="rounded-xl bg-zinc-900 border border-zinc-800 p-6 flex flex-col">
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="text-xl font-semibold">Medical Information</h2>
+              {profileComplete.medical && <span className="text-xs text-emerald-400 font-medium">✓ Filled</span>}
+            </div>
+            <p className="text-zinc-400 text-sm mt-1 flex-1">
+              Allergies, medications, conditions and insurance details.
             </p>
-
             <button
               onClick={() => router.push('/medical')}
-              className="mt-5 rounded-lg bg-blue-600 px-4 py-2 hover:bg-blue-700"
+              className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500 transition-colors"
             >
-              Edit
+              {profileComplete.medical ? 'Edit' : 'Fill Now →'}
             </button>
           </div>
 
-          {/* Emergency Contacts */}
-          <div className="rounded-xl bg-zinc-900 p-6">
-            <h2 className="text-2xl font-semibold">
-              Emergency Contacts
-            </h2>
-
-            <p className="mt-3 text-zinc-400">
-              Add family members and emergency
-              phone numbers.
+          <div className="rounded-xl bg-zinc-900 border border-zinc-800 p-6 flex flex-col">
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="text-xl font-semibold">Emergency Contacts</h2>
+              {(contactCount ?? 0) > 0 && (
+                <span className="text-xs text-emerald-400 font-medium">✓ {contactCount} added</span>
+              )}
+            </div>
+            <p className="text-zinc-400 text-sm mt-1 flex-1">
+              Add family members and emergency phone numbers.
             </p>
-
             <button
               onClick={() => router.push('/emergency')}
-              className="mt-5 rounded-lg bg-blue-600 px-4 py-2 hover:bg-blue-700"
+              className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500 transition-colors"
             >
               Manage
             </button>
           </div>
 
-          {/* Documents */}
-          <div className="rounded-xl bg-zinc-900 p-6">
-            <h2 className="text-2xl font-semibold">
-              Medical Documents
-            </h2>
-
-            <p className="mt-3 text-zinc-400">
-              Upload prescriptions, reports
-              and insurance cards.
+          <div className="rounded-xl bg-zinc-900 border border-zinc-800 p-6 flex flex-col">
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="text-xl font-semibold">Medical Documents</h2>
+              {(docCount ?? 0) > 0 && (
+                <span className="text-xs text-emerald-400 font-medium">✓ {docCount} file{docCount === 1 ? '' : 's'}</span>
+              )}
+            </div>
+            <p className="text-zinc-400 text-sm mt-1 flex-1">
+              Upload prescriptions, reports and insurance cards.
             </p>
-
             <button
               onClick={() => router.push('/documents')}
-              className="mt-5 rounded-lg bg-blue-600 px-4 py-2 hover:bg-blue-700"
+              className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium hover:bg-blue-500 transition-colors"
             >
               Upload
             </button>

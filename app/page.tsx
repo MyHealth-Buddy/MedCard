@@ -22,8 +22,8 @@ export default function Home() {
       const uidFromQuery = params.get('uid')
       if (uidFromQuery) {
         setSharedUid(uidFromQuery)
-        // Redirect to dashboard with the scanned uid
-        router.push(`/dashboard?uid=${encodeURIComponent(uidFromQuery)}`)
+        // Redirect to the public emergency view
+        router.push(`/view?uid=${encodeURIComponent(uidFromQuery)}`)
         return
       }
     }
@@ -100,7 +100,7 @@ export default function Home() {
           <button
             onClick={async () => {
               try {
-                const shareUrl = `https://med-card-one.vercel.app/?uid=${encodeURIComponent(user?.id ?? '')}`
+                const shareUrl = `${window.location.origin}/view?uid=${encodeURIComponent(user?.id ?? '')}`
                 await navigator.clipboard.writeText(shareUrl)
                 setCopied(true)
                 setTimeout(() => setCopied(false), 1800)
